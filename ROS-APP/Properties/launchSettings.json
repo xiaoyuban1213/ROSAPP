@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ROS-APP (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "ROS-APP (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
