@@ -3517,7 +3517,7 @@
     "C:\\Users\\xiaoy\\.nuget\\packages\\": {}
   },
   "project": {
-    "version": "0.0.40",
+    "version": "0.0.42",
     "restore": {
       "projectUniqueName": "E:\\github\\对象存储\\ROS-APP\\ROS-APP.csproj",
       "projectName": "ROS-APP",

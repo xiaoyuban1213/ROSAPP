@@ -75,6 +75,11 @@ public sealed partial class MainPage : Page
         FoldersList.ItemsSource = Folders;
         TransferBucketCombo.ItemsSource = Buckets;
         AboutVersion.Text = $"版本: {GetAppVersion()}";
+        AboutAuthor.Text = "作者: Yuban-Network";
+        AboutRuntime.Text = $".NET 运行时: {Environment.Version}";
+        AboutProtocols.Text = "协议支持: S3 / SFTP";
+        AboutSettingsPath.Text = $"配置路径: {_settingsPath}";
+        AboutUpdateFeed.Text = $"更新源: {FixedUpdateFeedUrl}";
         UpdateStatusText.Text = "未检查更新";
         LoadLogPreferences();
         LoadUpdateSettings();
@@ -916,7 +921,16 @@ public sealed partial class MainPage : Page
             return;
         }
 
-        var key = string.IsNullOrWhiteSpace(TransferKeyBox.Text) ? _uploadFile.Name : TransferKeyBox.Text.Trim();
+        var keyInput = TransferKeyBox.Text?.Trim() ?? string.Empty;
+        var key = ResolveUploadTargetKey(keyInput, _uploadFile.Name);
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            TransferStatus.Text = "上传目标路径无效。";
+            AppendLog("上传失败：目标路径无效。\n");
+            SetTransferSummary("上传失败");
+            SetUploadProgressMessage("进度：失败");
+            return;
+        }
         var localTotalBytes = new FileInfo(_uploadFile.Path).Length;
         TransferStatus.Text = "上传中...";
         SetUploadProgressInfo(0, 0, localTotalBytes);
@@ -1521,6 +1535,62 @@ public sealed partial class MainPage : Page
 
         var baseDir = NormalizeSftpDirectory(_currentPrefix);
         return CombineSftpPath(baseDir, key, false);
+    }
+
+    private string ResolveUploadTargetKey(string keyInput, string fileName)
+    {
+        var normalizedFileName = (fileName ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalizedFileName))
+        {
+            return string.Empty;
+        }
+
+        var input = (keyInput ?? string.Empty).Trim().Replace('\\', '/');
+        var treatAsDirectory = string.IsNullOrWhiteSpace(input) || input.EndsWith("/");
+
+        if (_protocol == StorageProtocol.S3)
+        {
+            // S3 key is always relative path-style text without leading slash.
+            var basePrefix = (_currentPrefix ?? string.Empty).Replace('\\', '/').Trim();
+            if (!string.IsNullOrWhiteSpace(basePrefix) && !basePrefix.EndsWith("/"))
+            {
+                basePrefix += "/";
+            }
+
+            var cleanedInput = input.TrimStart('/');
+            if (treatAsDirectory)
+            {
+                var dirPrefix = cleanedInput;
+                if (string.IsNullOrWhiteSpace(dirPrefix))
+                {
+                    dirPrefix = basePrefix;
+                }
+                if (!string.IsNullOrWhiteSpace(dirPrefix) && !dirPrefix.EndsWith("/"))
+                {
+                    dirPrefix += "/";
+                }
+                return $"{dirPrefix}{normalizedFileName}";
+            }
+
+            return cleanedInput;
+        }
+
+        if (treatAsDirectory)
+        {
+            var dirInput = input;
+            if (string.IsNullOrWhiteSpace(dirInput))
+            {
+                dirInput = _currentPrefix;
+            }
+            if (!string.IsNullOrWhiteSpace(dirInput) && !dirInput.EndsWith("/"))
+            {
+                dirInput += "/";
+            }
+            var combined = $"{dirInput}{normalizedFileName}";
+            return ResolveSftpRemotePath(combined);
+        }
+
+        return ResolveSftpRemotePath(input);
     }
 
     private void EnsureSftpDirectoryExists(string directoryPath)

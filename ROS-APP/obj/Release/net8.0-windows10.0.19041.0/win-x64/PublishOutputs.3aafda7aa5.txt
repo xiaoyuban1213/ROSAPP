@@ -286,7 +286,7 @@ E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\pu
 E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\hostfxr.dll
 E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\hostpolicy.dll
 E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\mscordaccore.dll
-E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\mscordaccore_amd64_amd64_8.0.2325.60607.dll
+E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\mscordaccore_amd64_amd64_8.0.2426.7010.dll
 E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\mscordbi.dll
 E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\mscorrc.dll
 E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\publish\msquic.dll

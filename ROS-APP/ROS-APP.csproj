@@ -24,7 +24,7 @@
     <AssemblyDescription>ROS-APP</AssemblyDescription>
     <FileDescription>EROS-APP</FileDescription>
     <AssemblyCopyright>Copyright © 2026 YuBan Network</AssemblyCopyright>
-    <Version>0.0.40</Version>
+    <Version>0.0.42</Version>
     <FileVersion>$(Version).0</FileVersion>
     <AssemblyVersion>$(Version).0</AssemblyVersion>
     <InformationalVersion>$(Version)</InformationalVersion>

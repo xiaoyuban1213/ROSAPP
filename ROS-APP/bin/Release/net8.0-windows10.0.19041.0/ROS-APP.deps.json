@@ -6,7 +6,7 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v8.0": {
-      "ROS-APP/0.0.40": {
+      "ROS-APP/0.0.41": {
         "dependencies": {
           "AWSSDK.S3": "4.0.18.1",
           "Microsoft.Web.WebView2": "1.0.3800.47",
@@ -350,7 +350,7 @@
     }
   },
   "libraries": {
-    "ROS-APP/0.0.40": {
+    "ROS-APP/0.0.41": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

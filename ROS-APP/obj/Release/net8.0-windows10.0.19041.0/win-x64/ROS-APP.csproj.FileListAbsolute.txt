@@ -502,7 +502,6 @@ E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\cr
 E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\hostfxr.dll
 E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\hostpolicy.dll
 E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\mscordaccore.dll
-E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\mscordaccore_amd64_amd64_8.0.2325.60607.dll
 E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\mscordbi.dll
 E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\mscorrc.dll
 E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\msquic.dll
@@ -552,3 +551,4 @@ E:\github\对象存储\ROS-APP\obj\Release\net8.0-windows10.0.19041.0\win-x64\qu
 E:\github\对象存储\ROS-APP\obj\Release\net8.0-windows10.0.19041.0\win-x64\MultipleQualifiersPerDimensionFound.txt
 E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\BouncyCastle.Cryptography.dll
 E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\Renci.SshNet.dll
+E:\github\对象存储\ROS-APP\bin\Release\net8.0-windows10.0.19041.0\win-x64\mscordaccore_amd64_amd64_8.0.2426.7010.dll

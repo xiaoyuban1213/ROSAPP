@@ -12,11 +12,11 @@ using System.Reflection;
 
 [assembly: System.Reflection.AssemblyCompanyAttribute("Yuban-Network")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
-[assembly: System.Reflection.AssemblyFileVersionAttribute("0.0.40.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.0.40+7e4cc3cac3a52e5f945db815911773ef933db1fd")]
+[assembly: System.Reflection.AssemblyFileVersionAttribute("0.0.42.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.0.42+83e792e01d68486949d4bdde75d953fc0a02eebd")]
 [assembly: System.Reflection.AssemblyProductAttribute("ROS-APP")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ROS-APP")]
-[assembly: System.Reflection.AssemblyVersionAttribute("0.0.40.0")]
+[assembly: System.Reflection.AssemblyVersionAttribute("0.0.42.0")]
 [assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows10.0.19041.0")]
 [assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows10.0.17763.0")]
 
