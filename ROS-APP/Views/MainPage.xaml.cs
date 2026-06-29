@@ -3,7 +3,9 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Renci.SshNet;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
@@ -54,6 +56,7 @@ public sealed partial class MainPage : Page
     private const string FixedUpdateFeedUrl = "http://ros.yuban.cloud/ros/latest.json";
     private string? _latestUpdateUrl;
     private string? _latestUpdateVersion;
+    private UIElement? _activeView;
 
     public ObservableCollection<BucketItem> Buckets { get; } = new();
     public ObservableCollection<ObjectItem> Objects { get; } = new();
@@ -89,6 +92,9 @@ public sealed partial class MainPage : Page
         SetConnectionSummary("未连接", _protocol, "");
         SetTransferSummary("空闲");
         UpdateDashboardStats();
+        UpdateUploadTargetHint();
+        UpdateObjectSelectionState();
+        UpdateObjectEmptyHints();
         _uiReady = true;
         ShowView(ViewLog);
     }
@@ -262,6 +268,7 @@ public sealed partial class MainPage : Page
         {
             ObjectsSearchBox.Text = "";
         }
+        UpdateUploadTargetHint();
         UpdateObjectsHeader();
         AppendLog($"选择桶: {item.Name}\n");
         ShowView(ViewObjects);
@@ -297,8 +304,10 @@ public sealed partial class MainPage : Page
             _allObjects.Clear();
             _allFolders.Clear();
             if (PreviewTitle is not null) PreviewTitle.Text = "请选择对象";
+            if (PreviewMetaText is not null) PreviewMetaText.Text = "支持小文件文本预览（约 1MB 内）";
             if (PreviewBox is not null) PreviewBox.Text = string.Empty;
             if (PathBox is not null) PathBox.Text = "/" + prefix;
+            UpdateObjectSelectionState();
 
             var folderSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             string? continuation = null;
@@ -388,6 +397,7 @@ public sealed partial class MainPage : Page
             CaptureObjectSnapshot();
             ApplyObjectFilter();
             UpdateDashboardStats();
+            UpdateObjectSelectionState();
         }
         catch (Exception ex)
         {
@@ -414,8 +424,10 @@ public sealed partial class MainPage : Page
             _allObjects.Clear();
             _allFolders.Clear();
             if (PreviewTitle is not null) PreviewTitle.Text = "请选择对象";
+            if (PreviewMetaText is not null) PreviewMetaText.Text = "支持小文件文本预览（约 1MB 内）";
             if (PreviewBox is not null) PreviewBox.Text = string.Empty;
             if (PathBox is not null) PathBox.Text = normalized;
+            UpdateObjectSelectionState();
 
             var entries = await System.Threading.Tasks.Task.Run(() =>
             {
@@ -454,6 +466,7 @@ public sealed partial class MainPage : Page
             CaptureObjectSnapshot();
             ApplyObjectFilter();
             UpdateDashboardStats();
+            UpdateObjectSelectionState();
         }
         catch (Exception ex)
         {
@@ -524,6 +537,7 @@ public sealed partial class MainPage : Page
 
         _currentPrefix = folder.Prefix;
         AppendLog($"进入文件夹: {_currentPrefix}\n");
+        UpdateUploadTargetHint();
         await LoadObjectsAsync(_connectedBucket, _currentPrefix);
     }
 
@@ -538,6 +552,7 @@ public sealed partial class MainPage : Page
         {
             _currentPrefix = GetSftpParentPath(_currentPrefix);
             AppendLog($"返回上一级: {_currentPrefix}\n");
+            UpdateUploadTargetHint();
             await LoadObjectsAsync(_connectedBucket, _currentPrefix);
             return;
         }
@@ -551,6 +566,7 @@ public sealed partial class MainPage : Page
         var idx = trimmed.LastIndexOf('/');
         _currentPrefix = idx >= 0 ? trimmed.Substring(0, idx + 1) : "";
         AppendLog($"返回上一级: {_currentPrefix}\n");
+        UpdateUploadTargetHint();
         await LoadObjectsAsync(_connectedBucket, _currentPrefix);
     }
 
@@ -602,18 +618,33 @@ public sealed partial class MainPage : Page
         }
 
         AppendLog($"已填充下载 Key: {obj.FullKey}\n");
+        UpdateObjectSelectionState();
     }
 
     private async void OnObjectSelected(object sender, SelectionChangedEventArgs e)
     {
         if (ObjectsList.SelectedItem is not ObjectItem obj || _connectedBucket is null)
         {
+            UpdateObjectSelectionState();
+            if (PreviewTitle is not null)
+            {
+                PreviewTitle.Text = "请选择对象";
+            }
+            if (PreviewMetaText is not null)
+            {
+                PreviewMetaText.Text = "支持小文件文本预览（约 1MB 内）";
+            }
             return;
         }
 
         PreviewTitle.Text = obj.Key;
+        if (PreviewMetaText is not null)
+        {
+            PreviewMetaText.Text = $"{obj.SizeText} | 修改时间 {obj.LastModified}";
+        }
         PreviewBox.Text = "加载中...";
         AppendLog($"预览对象: {obj.FullKey}\n");
+        UpdateObjectSelectionState();
 
         try
         {
@@ -865,6 +896,37 @@ public sealed partial class MainPage : Page
         AppendLog($"已复制完整路径: {fullPath}\n");
     }
 
+    private void OnQuickDownloadClicked(object sender, RoutedEventArgs e)
+    {
+        OnObjectDownload(sender, e);
+    }
+
+    private void OnQuickDeleteClicked(object sender, RoutedEventArgs e)
+    {
+        OnObjectDelete(sender, e);
+    }
+
+    private void OnQuickCopyKeyClicked(object sender, RoutedEventArgs e)
+    {
+        OnObjectCopyKey(sender, e);
+    }
+
+    private void OnObjectsListKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Delete)
+        {
+            OnObjectDelete(sender, new RoutedEventArgs());
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Windows.System.VirtualKey.Enter)
+        {
+            OnObjectDownload(sender, new RoutedEventArgs());
+            e.Handled = true;
+        }
+    }
+
     private async void OnPickUploadFile(object sender, RoutedEventArgs e)
     {
         var picker = new FileOpenPicker();
@@ -872,6 +934,7 @@ public sealed partial class MainPage : Page
         picker.FileTypeFilter.Add("*");
         _uploadFile = await picker.PickSingleFileAsync();
         UploadFileLabel.Text = _uploadFile?.Name ?? "未选择文件";
+        UpdateUploadTargetHint();
         SetUploadProgressInfo(0);
         AppendLog("选择上传文件。\n");
     }
@@ -1008,6 +1071,7 @@ public sealed partial class MainPage : Page
             {
                 await LoadObjectsAsync(bucket.Name, _currentPrefix);
             }
+            UpdateUploadTargetHint();
         }
         catch (Exception ex)
         {
@@ -1188,6 +1252,8 @@ public sealed partial class MainPage : Page
         {
             UpdateObjectsHeader();
             UpdateDashboardStats();
+            UpdateObjectEmptyHints();
+            UpdateObjectSelectionState();
             return;
         }
 
@@ -1234,6 +1300,8 @@ public sealed partial class MainPage : Page
 
         UpdateObjectsHeader();
         UpdateDashboardStats();
+        UpdateObjectEmptyHints();
+        UpdateObjectSelectionState();
     }
 
     private void UpdateObjectsHeader()
@@ -1250,6 +1318,43 @@ public sealed partial class MainPage : Page
             ? Objects.Count.ToString()
             : $"{Objects.Count}/{_allObjects.Count}";
         ObjectsBucketLabel.Text = $"{_objectsContextLabel}  (文件夹 {folderText} / 文件 {fileText})";
+    }
+
+    private void UpdateObjectEmptyHints()
+    {
+        if (FolderEmptyHint is not null)
+        {
+            FolderEmptyHint.Visibility = Folders.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+        if (ObjectEmptyHint is not null)
+        {
+            ObjectEmptyHint.Visibility = Objects.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    private void UpdateObjectSelectionState()
+    {
+        var selected = ObjectsList?.SelectedItem as ObjectItem;
+        var hasSelection = selected is not null;
+
+        if (QuickDownloadButton is not null)
+        {
+            QuickDownloadButton.IsEnabled = hasSelection;
+        }
+        if (QuickDeleteButton is not null)
+        {
+            QuickDeleteButton.IsEnabled = hasSelection;
+        }
+        if (QuickCopyKeyButton is not null)
+        {
+            QuickCopyKeyButton.IsEnabled = hasSelection;
+        }
+        if (ObjectSelectionHint is not null)
+        {
+            ObjectSelectionHint.Text = hasSelection
+                ? $"已选择：{selected!.FullKey}"
+                : "提示：选择文件后可快速下载/删除，Delete 可直接删除。";
+        }
     }
 
     private bool HasActiveConnection()
@@ -1759,6 +1864,70 @@ public sealed partial class MainPage : Page
         AppendLog($"已打开下载页: {_latestUpdateUrl}\n");
     }
 
+    private void OnSecretKeyBoxKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != Windows.System.VirtualKey.Enter)
+        {
+            return;
+        }
+
+        OnConnectClicked(ConnectButton, new RoutedEventArgs());
+    }
+
+    private void OnTransferBucketChanged(object sender, SelectionChangedEventArgs e)
+    {
+        UpdateUploadTargetHint();
+    }
+
+    private void OnTransferKeyTextChanged(object sender, TextChangedEventArgs e)
+    {
+        UpdateUploadTargetHint();
+    }
+
+    private void OnTransferKeyBoxKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != Windows.System.VirtualKey.Enter)
+        {
+            return;
+        }
+
+        OnUploadClicked(sender, new RoutedEventArgs());
+    }
+
+    private void OnDownloadKeyBoxKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key != Windows.System.VirtualKey.Enter)
+        {
+            return;
+        }
+
+        OnDownloadClicked(sender, new RoutedEventArgs());
+    }
+
+    private void UpdateUploadTargetHint()
+    {
+        if (UploadTargetHintText is null)
+        {
+            return;
+        }
+
+        if (_uploadFile is null)
+        {
+            UploadTargetHintText.Text = "上传目标：等待选择文件";
+            return;
+        }
+
+        var targetKey = ResolveUploadTargetKey(TransferKeyBox?.Text?.Trim() ?? string.Empty, _uploadFile.Name);
+        if (string.IsNullOrWhiteSpace(targetKey))
+        {
+            UploadTargetHintText.Text = "上传目标：路径无效";
+            return;
+        }
+
+        var bucketName = (TransferBucketCombo?.SelectedItem as BucketItem)?.Name ?? "未选桶";
+        UploadTargetHintText.Text = $"上传目标：{bucketName}/{targetKey}";
+    }
+
     private void OnNavLog(object sender, RoutedEventArgs e)
     {
         AppendLog("切换到日志视图。\n");
@@ -1782,6 +1951,7 @@ public sealed partial class MainPage : Page
     {
         AppendLog("切换到对象浏览视图。\n");
         ShowView(ViewObjects);
+        ObjectsSearchBox?.Focus(FocusState.Programmatic);
         if (_connectedBucket is not null)
         {
             await LoadObjectsAsync(_connectedBucket, _currentPrefix);
@@ -1856,6 +2026,35 @@ public sealed partial class MainPage : Page
         ViewAbout.Visibility = Visibility.Collapsed;
 
         target.Visibility = Visibility.Visible;
+        _activeView = target;
+        UpdateNavButtonStates();
+    }
+
+    private void UpdateNavButtonStates()
+    {
+        SetNavButtonState(NavLog, _activeView == ViewLog);
+        SetNavButtonState(NavConnect, _activeView == ViewConnect);
+        SetNavButtonState(NavBuckets, _activeView == ViewBuckets);
+        SetNavButtonState(NavObjects, _activeView == ViewObjects);
+        SetNavButtonState(NavTransfer, _activeView == ViewTransfer);
+        SetNavButtonState(NavSettings, _activeView == ViewSettings);
+        SetNavButtonState(NavAbout, _activeView == ViewAbout);
+    }
+
+    private void SetNavButtonState(Button button, bool isActive)
+    {
+        button.Opacity = isActive ? 1.0 : 0.86;
+        button.FontWeight = isActive ? Microsoft.UI.Text.FontWeights.SemiBold : Microsoft.UI.Text.FontWeights.Normal;
+        if (isActive)
+        {
+            // Keep highlight simple and avoid looking up app-level resources during startup.
+            button.BorderThickness = new Thickness(2);
+            button.BorderBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.SteelBlue);
+            return;
+        }
+
+        button.BorderThickness = new Thickness(1);
+        button.ClearValue(Button.BorderBrushProperty);
     }
 
     private string FormatLogText(string text)

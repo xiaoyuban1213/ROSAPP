@@ -283,7 +283,7 @@
 
                                 <StackPanel Spacing="6">
                                     <TextBlock x:Name="SecretKeyLabel" FontSize="12" Foreground="{ThemeResource BodyBrush}" Text="Secret Key" />
-                                    <TextBox x:Name="SecretKeyBox" Style="{StaticResource InputTextBoxStyle}" MinHeight="36" PlaceholderText="请输入 Secret Key（可见）" />
+                                    <TextBox x:Name="SecretKeyBox" Style="{StaticResource InputTextBoxStyle}" MinHeight="36" PlaceholderText="请输入 Secret Key（可见）" KeyDown="OnSecretKeyBoxKeyDown" />
                                 </StackPanel>
 
                                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -375,7 +375,14 @@
                             <TextBlock FontSize="20" FontWeight="SemiBold" Foreground="{ThemeResource TitleBrush}" Text="对象列表" />
                             <TextBlock x:Name="ObjectsBucketLabel" Foreground="{ThemeResource BodyBrush}" Text="未选择桶" />
 
-                            <TextBlock Foreground="{ThemeResource BodyBrush}" Text="文件夹" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Foreground="{ThemeResource BodyBrush}" Text="文件夹" />
+                                <TextBlock Grid.Column="1" x:Name="FolderEmptyHint" Foreground="{ThemeResource BodyBrush}" Text="无文件夹" Visibility="Collapsed" />
+                            </Grid>
                             <ListView x:Name="FoldersList" Height="170" SelectionChanged="OnFolderSelected" Background="{ThemeResource ListBackgroundBrush}" BorderBrush="{ThemeResource ListBorderBrush}" BorderThickness="1">
                                 <ListView.ItemTemplate>
                                     <DataTemplate>
@@ -384,8 +391,15 @@
                                 </ListView.ItemTemplate>
                             </ListView>
 
-                            <TextBlock Foreground="{ThemeResource BodyBrush}" Text="文件" />
-                            <ListView x:Name="ObjectsList" SelectionChanged="OnObjectSelected" IsItemClickEnabled="True" ItemClick="OnObjectItemClick" Background="{ThemeResource ListBackgroundBrush}" BorderBrush="{ThemeResource ListBorderBrush}" BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Foreground="{ThemeResource BodyBrush}" Text="文件" />
+                                <TextBlock Grid.Column="1" x:Name="ObjectEmptyHint" Foreground="{ThemeResource BodyBrush}" Text="无文件" Visibility="Collapsed" />
+                            </Grid>
+                            <ListView x:Name="ObjectsList" SelectionChanged="OnObjectSelected" IsItemClickEnabled="True" ItemClick="OnObjectItemClick" KeyDown="OnObjectsListKeyDown" Background="{ThemeResource ListBackgroundBrush}" BorderBrush="{ThemeResource ListBorderBrush}" BorderThickness="1">
                                 <ListView.ItemTemplate>
                                     <DataTemplate>
                                         <Grid Margin="0,3">
@@ -409,11 +423,26 @@
                                     </DataTemplate>
                                 </ListView.ItemTemplate>
                             </ListView>
+                            <Border Padding="10" Background="{ThemeResource ListBackgroundBrush}" BorderBrush="{ThemeResource ListBorderBrush}" BorderThickness="1" CornerRadius="10">
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="ObjectSelectionHint" Foreground="{ThemeResource BodyBrush}" Text="提示：选择文件后可快速下载/删除，Delete 可直接删除。" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                        <Button x:Name="QuickDownloadButton" Style="{StaticResource SecondaryActionButtonStyle}" Content="下载所选" Click="OnQuickDownloadClicked" IsEnabled="False" />
+                                        <Button x:Name="QuickDeleteButton" Style="{StaticResource SecondaryActionButtonStyle}" Content="删除所选" Click="OnQuickDeleteClicked" IsEnabled="False" />
+                                        <Button x:Name="QuickCopyKeyButton" Style="{StaticResource SecondaryActionButtonStyle}" Content="复制 Key" Click="OnQuickCopyKeyClicked" IsEnabled="False" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
                         </StackPanel>
 
                         <StackPanel Grid.Row="1" Grid.Column="1" Spacing="10">
                             <TextBlock FontSize="20" FontWeight="SemiBold" Foreground="{ThemeResource TitleBrush}" Text="对象预览" />
                             <TextBlock x:Name="PreviewTitle" Foreground="{ThemeResource BodyBrush}" Text="请选择对象" />
+                            <TextBlock x:Name="PreviewMetaText" Foreground="{ThemeResource BodyBrush}" Text="支持小文件文本预览（约 1MB 内）" />
                             <TextBox x:Name="PreviewBox" Style="{StaticResource InputTextBoxStyle}" AcceptsReturn="True" IsReadOnly="True" Height="370" FontFamily="Consolas" TextWrapping="Wrap" />
                         </StackPanel>
                     </Grid>
@@ -433,9 +462,10 @@
                                 <StackPanel Spacing="10">
                                     <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="{ThemeResource TitleBrush}" Text="上传" />
                                     <TextBlock FontSize="12" Foreground="{ThemeResource BodyBrush}" Text="目标桶" />
-                                    <ComboBox x:Name="TransferBucketCombo" Style="{StaticResource InputComboBoxStyle}" DisplayMemberPath="Name" MinHeight="36" />
+                                    <ComboBox x:Name="TransferBucketCombo" Style="{StaticResource InputComboBoxStyle}" DisplayMemberPath="Name" MinHeight="36" SelectionChanged="OnTransferBucketChanged" />
                                     <TextBlock FontSize="12" Foreground="{ThemeResource BodyBrush}" Text="对象 Key（可选）" />
-                                    <TextBox x:Name="TransferKeyBox" Style="{StaticResource InputTextBoxStyle}" MinHeight="36" PlaceholderText="例如: folder/ 或 folder/file.txt（留空=当前目录）" />
+                                    <TextBox x:Name="TransferKeyBox" Style="{StaticResource InputTextBoxStyle}" MinHeight="36" PlaceholderText="例如: folder/ 或 folder/file.txt（留空=当前目录）" TextChanged="OnTransferKeyTextChanged" KeyDown="OnTransferKeyBoxKeyDown" />
+                                    <TextBlock x:Name="UploadTargetHintText" Foreground="{ThemeResource BodyBrush}" Text="上传目标：等待选择文件" TextWrapping="Wrap" />
                                     <StackPanel Orientation="Horizontal" Spacing="10">
                                         <Button Style="{StaticResource SecondaryActionButtonStyle}" Content="选择上传文件" Click="OnPickUploadFile" />
                                         <TextBlock x:Name="UploadFileLabel" Foreground="{ThemeResource BodyBrush}" Text="未选择文件" VerticalAlignment="Center" />
@@ -450,7 +480,7 @@
                                 <StackPanel Spacing="10">
                                     <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="{ThemeResource TitleBrush}" Text="下载" />
                                     <TextBlock FontSize="12" Foreground="{ThemeResource BodyBrush}" Text="下载对象 Key" />
-                                    <TextBox x:Name="DownloadKeyBox" Style="{StaticResource InputTextBoxStyle}" MinHeight="36" PlaceholderText="例如: folder/file.txt" />
+                                    <TextBox x:Name="DownloadKeyBox" Style="{StaticResource InputTextBoxStyle}" MinHeight="36" PlaceholderText="例如: folder/file.txt" KeyDown="OnDownloadKeyBoxKeyDown" />
                                     <StackPanel Orientation="Horizontal" Spacing="10">
                                         <Button Style="{StaticResource SecondaryActionButtonStyle}" Content="选择下载目录" Click="OnPickDownloadFolder" />
                                         <TextBlock x:Name="DownloadFolderLabel" Foreground="{ThemeResource BodyBrush}" Text="未选择目录" VerticalAlignment="Center" />
